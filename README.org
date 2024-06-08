@@ -1,0 +1,125 @@
+#+title: Run cpptestcli from Parasoft C/C++test
+
+This action runs =cpptestcli= from Parasoft C/C++test Professional.
+
+Parasoft already provides an official GitHub Action,
+[[https://github.com/parasoft/run-cpptest-action][run-cpptest-action]]. If you prefer the official one, please visit their
+repository.
+
+=action-cpptestcli= aims not to interfere with =cpptestcli=. It
+behaves just as =cpptestcli= does. For example, if you specify a
+=.bdf=, it creates projects from the =.bdf=. If you specify =config=,
+it will generate a report.
+
+One difference from =cpptestcli= is that it always passes =-data=. The
+default value for =-data= is =workspace=. This is because, unlike
+desktop usage, =action-cpptestcli= is used for CI, and users don't
+want to interact with =~/parasoft/workspace/=. Instead, it should use
+a temporary workspace for CI.
+
+Another difference is that =-report= is also always passed. The
+default value for =-report= is =report=. The report is generated under
+the =report/= directory.
+
+* Basic usage
+  #+begin_src yaml
+    - name: Run cpptestcli
+      uses: spacecubics/action-cpptestcli@v1
+      with:
+        settings: local.conf
+        bdf: cpptestscan.bdf
+        config: builtin://Recommended Rules
+  #+end_src
+
+  This will run =cpptestcli= in the current working directory, create
+  =workspace/=, apply =./local.conf=, loads and generates projects
+  from =./cpptestscan.bdf= in the workspace, then generate a report
+  using the build in "Recommended Rules" under =report/= directory.
+
+* Scenarios
+
+** cpptestcli is not in PATH
+   #+begin_src yaml
+     - name: Run cpptestcli
+       uses: spacecubics/action-cpptestcli@v1
+       with:
+         settings: local.conf
+         bdf: cpptestscan.bdf
+         config: builtin://Recommended Rules
+         install-dir: /opt/tools/cpptest-2023.2.0
+   #+end_src
+
+   If you don't have =cpptestcli=, you can specify ~install-dir~.
+
+** Different workspace directory
+   #+begin_src yaml
+     - name: Run cpptestcli
+       uses: spacecubics/action-cpptestcli@v1
+       with:
+         settings: local.conf
+         bdf: cpptestscan.bdf
+         config: builtin://Recommended Rules
+         data: myworkspace
+   #+end_src
+
+** Different report directory
+   #+begin_src yaml
+     - name: Run cpptestcli
+       uses: spacecubics/action-cpptestcli@v1
+       with:
+         settings: local.conf
+         bdf: cpptestscan.bdf
+         config: builtin://Recommended Rules
+         report: myreport
+   #+end_src
+
+** Create projects from a .bdf file but not generate report
+   #+begin_src yaml
+     - name: Run cpptestcli
+       uses: spacecubics/action-cpptestcli@v1
+       with:
+         settings: local.conf
+         bdf: cpptestscan.bdf
+   #+end_src
+
+** Resource to use within the workspace
+   #+begin_src yaml
+     - name: Run cpptestcli
+       uses: spacecubics/action-cpptestcli@v1
+       with:
+         settings: local.conf
+         bdf: cpptestscan.bdf
+         config: builtin://Recommended Rules
+         resource: myproject
+   #+end_src
+
+** Generate report from already populated workspace
+   #+begin_src yaml
+     - name: Run cpptestcli
+       uses: spacecubics/action-cpptestcli@v1
+       with:
+         settings: local.conf
+         config: builtin://Recommended Rules
+   #+end_src
+
+** Run cpptestcli in a different directory
+   #+begin_src yaml
+     - name: Run cpptestcli
+       uses: spacecubics/action-cpptestcli@v1
+       with:
+         settings: local.conf
+         bdf: cpptestscan.bdf
+         config: builtin://Recommended Rules
+         working-directory: builddir
+   #+end_src
+
+** Specify multiple configuraion files
+   #+begin_src yaml
+     - name: Run cpptestcli
+       uses: spacecubics/action-cpptestcli@v1
+       with:
+         settings: local.conf:license.conf
+         bdf: cpptestscan.bdf
+         config: builtin://Recommended Rules
+         working-directory: builddir
+   #+end_src

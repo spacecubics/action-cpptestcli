@@ -1,0 +1,86 @@
+# Copyright 2024 Space Cubics, LLC.
+# SPDX-License-Identifier: Apache-2.0
+
+name: Run cpptestcli
+description: Run cpptestcli from Parasoft C/C++test Professional
+
+inputs:
+  data:
+    description: workspace to use
+    required: false
+    default: workspace
+
+  config:
+    description: configuration URL
+    required: false
+
+  bdf:
+    description: build data file (.bdf)
+    required: false
+
+  resource:
+    description: resource path within workspace to add to the test scope
+    required: false
+
+  report:
+    description: report directory
+    required: false
+    default: report
+
+  settings:
+    description: Custom configuration files
+    required: false
+
+  install-dir:
+    description: Install directory when cpptestcli is not found in $PATH
+    required: false
+
+  working-directory:
+    description: Working directory to run on
+    required: false
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Find cpptestcli
+      shell: bash
+      run: |
+        if [[ -n "${{ inputs.install-dir }}" ]]; then
+          if test -x "${{ inputs.install-dir }}/cpptestcli" ; then
+            echo "Executable found: ${{ inputs.install-dir }}/cpptestcli"
+            echo "CPPTESTCLI=${{ inputs.install-dir }}/cpptestcli" >> $GITHUB_ENV
+          else
+            echo "install-dir is set but ${{ inputs.install-dir }}/cpptestcli does not exist or isn't executable"
+            exit 1
+          fi
+        else
+          if command -v cpptestcli ; then
+            echo "Executable found in PATH: $(command -v cpptestcli)"
+            echo "CPPTESTCLI=$(command -v cpptestcli)" >> $GITHUB_ENV
+          else
+            echo "install-dir is not set and cpptestcli is not in $PATH"
+            exit 1
+          fi
+        fi
+
+    - name: Run cpptestcli
+      shell: bash
+      run: |
+        cmd=("$CPPTESTCLI")
+                                           cmd+=(-data   "${{ inputs.data }}")
+        [[ -n "${{ inputs.config }}" ]] && cmd+=(-config "${{ inputs.config }}")
+        [[ -n "${{ inputs.report }}" ]] && cmd+=(-report "${{ inputs.report }}")
+        [[ -n "${{ inputs.bdf }}" ]]    && cmd+=(-bdf    "${{ inputs.bdf }}")
+
+        IFS=":"
+        SETTINGS="${{ inputs.settings }}"
+        for setting in $SETTINGS; do
+            cmd+=(-settings "$setting")
+        done
+
+        if [[ -n "${{ inputs.working-directory }}" ]]; then
+            cd "${{ inputs.working-directory }}"
+        fi
+
+        "${cmd[@]}"
